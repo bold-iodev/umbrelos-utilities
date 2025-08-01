@@ -4,7 +4,7 @@ services:
     environment:
       # This must point to <app-id>_<service-name>_1
       APP_HOST: umbrelos-utilities-watermark-service_server_1
-      APP_PORT: 9009
+      APP_PORT: 9099
 
   server:
     image: ghcr.io/bold-iodev/umbrelos-utilities-watermark-service:1.0.0
@@ -18,4 +18,4 @@ services:
       - ${APP_DATA_DIR}/outputs:/app/outputs
     # Expose port 9009 internally; the app_proxy handles external routing.
     ports:
-      - "9009:9009"
+      - "9099:9099"
