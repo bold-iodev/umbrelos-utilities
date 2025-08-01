@@ -13,7 +13,6 @@ icon: https://github.com/bold-iodev/umbrelos-utilities/blob/master/medias/waterm
 # Opcional: define hasta 3‑5 enlaces a imágenes 16:10 (1440x900 px) que se mostrarán en la galería del App Store.
 gallery:
   - https://github.com/bold-iodev/umbrelos-utilities/blob/master/medias/watermark-service/screenshot1.png?raw=true
-
 developer: IODev__
 website: 
 submitter: IODev__
@@ -23,7 +22,6 @@ support: https://github.com/bold-iodev/umbrelos-utilities
 releaseNotes: >-
   Launch version 1.0.0
 dependencies: []
-# path indica el subdirectorio que debe abrirse automáticamente al hacer clic en "Abrir" en Umbrel. Dejar vacío para la raíz.
 path: ""
 defaultUsername: ""
 defaultPassword: ""
