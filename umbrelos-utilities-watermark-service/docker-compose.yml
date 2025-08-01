@@ -7,11 +7,7 @@ services:
       APP_PORT: 9009
 
   server:
-    # Build the image from the included Dockerfile. When the app is installed on
-    # Umbrel, it will build the image automatically on the target architecture (e.g. Raspberry Pi ARM64).
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/tuusuario/umbrelos-utilities-watermark-service:1.0.0
     restart: on-failure
     stop_grace_period: 1m
     # Map persistent directories into the container. Umbrel defines $APP_DATA_DIR
