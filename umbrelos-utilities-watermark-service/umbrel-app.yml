@@ -3,9 +3,9 @@ id: umbrelos-utilities-watermark-service
 name: Watermark Service
 tagline: Batch service to add custom watermarks on multiple images and videos
 description: >-
-  This Flask-based service allows you to upload images and videos, select a watermark in PNG format
- , adjust its size and position, and download the processed files with the watermark incorporated. It is
- ideal for protecting your content directly from your Umbrel without relying on external services.
+  This Flask‑based service allows you to upload images and videos, select a watermark in PNG format, adjust its
+  size and position, and download the processed files with the watermark incorporated. It is ideal for protecting
+  your content directly from your Umbrel without relying on external services.
 category: Utilities
 version: "1.0.0"
 port: 9009
