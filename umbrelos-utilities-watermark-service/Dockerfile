@@ -12,6 +12,6 @@ RUN apt-get update \
 
 COPY app /app
 
-EXPOSE 9009
+EXPOSE 9099
 
 CMD ["python", "server.py"]
