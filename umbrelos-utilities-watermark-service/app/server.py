@@ -116,31 +116,26 @@ def apply_watermark_to_video(video_path: str, watermark_img: Image.Image, size_p
     ratio = watermark_img.height / watermark_img.width
     new_h = int(new_w * ratio)
     wm_rgba_resized = cv2.resize(wm_rgba, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    # Separar canales
-    wm_rgb  = wm_rgba_resized[:, :, :3]
-    wm_alpha= wm_rgba_resized[:, :, 3] / 255.0
+
+    # Convertir a BGR y normalizar
+    wm_bgr = cv2.cvtColor(wm_rgba_resized, cv2.COLOR_RGBA2BGR).astype(np.float32)
+    wm_alpha = wm_rgba_resized[:, :, 3].astype(np.float32) / 255.0
+
     # Calcular posición absoluta
     pos_left = int(pos_x * width)
-    pos_top  = int(pos_y * height)
-    pos_left = max(0, min(pos_left, width  - new_w))
-    pos_top  = max(0, min(pos_top,  height - new_h))
+    pos_top = int(pos_y * height)
+    pos_left = max(0, min(pos_left, width - new_w))
+    pos_top = max(0, min(pos_top, height - new_h))
+
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        # Asegurarse de tener canal alpha
-        if frame.shape[2] == 3:
-            base = frame.copy().astype(float)
-        else:
-            # Si el frame tiene alfa, ignorar
-            base = frame[:, :, :3].copy().astype(float)
-        # Extraer región de interés
+        base = frame.astype(np.float32)
         roi = base[pos_top:pos_top + new_h, pos_left:pos_left + new_w]
-        # Combinación ponderada
         for c in range(3):
-            roi[:, :, c] = (1.0 - wm_alpha) * roi[:, :, c] + wm_alpha * wm_rgb[:, :, c]
+            roi[:, :, c] = (1.0 - wm_alpha) * roi[:, :, c] + wm_alpha * wm_bgr[:, :, c]
         base[pos_top:pos_top + new_h, pos_left:pos_left + new_w] = roi
-        # Convertir a uint8
         out_frame = np.clip(base, 0, 255).astype('uint8')
         out.write(out_frame)
     cap.release()
