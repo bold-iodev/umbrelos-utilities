@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermark Service</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <style>
+            /* Contenedor de vista previa (imagen o vídeo) */
+            #preview-wrapper {
+                background-color: #f9f9f9;
+            }
+            /* Marca de agua sobre la vista previa */
+            #watermark-preview {
+                opacity: 0.8;
+                z-index: 20;
+            }
+            /* Guías de alineación */
+            .guideline {
+                position: absolute;
+                background-color: rgba(255, 0, 0, 0.3);
+                pointer-events: none;
+                z-index: 15;
+            }
+            .guideline.vertical {
+                width: 2px;
+                height: 100%;
+                top: 0;
+            }
+            .guideline.horizontal {
+                height: 2px;
+                width: 100%;
+                left: 0;
+            }
+            .guideline.margin {
+                background-color: rgba(0, 0, 255, 0.3);
+            }
+        </style>
+</head>
+<body class="bg-light">
+    <div class="container my-5">
+        <h1 class="text-center text-primary mb-4">Watermark Service</h1>
+        <div class="row g-4">
+            <!-- Vista previa a la izquierda en escritorio y abajo en móvil -->
+            <div class="col-12 col-md-4 order-2 order-md-1">
+                <h5 class="text-center mb-3">Preview</h5>
+                <div id="preview-wrapper" class="border rounded position-relative overflow-hidden">
+                    <!-- Imagen y vídeo de fondo -->
+                    <img id="image-preview" src="#" alt="Image preview" class="w-100 h-auto d-none">
+                    <video id="video-preview" class="w-100 h-auto d-none" controls></video>
+                    <!-- Marca de agua superpuesta -->
+                    <img id="watermark-preview" src="#" alt="Watermark" class="position-absolute d-none" draggable="false" style="cursor:grab;">
+                    <!-- Guías de alineación -->
+                    <div id="guidelines" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events:none;">
+                        <div id="v-center" class="guideline vertical d-none"></div>
+                        <div id="h-center" class="guideline horizontal d-none"></div>
+                        <div id="v-margin-left" class="guideline vertical margin d-none"></div>
+                        <div id="v-margin-right" class="guideline vertical margin d-none"></div>
+                        <div id="h-margin-top" class="guideline horizontal margin d-none"></div>
+                        <div id="h-margin-bottom" class="guideline horizontal margin d-none"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Formulario a la derecha en escritorio y arriba en móvil -->
+            <div class="col-12 col-md-8 order-1 order-md-2">
+                <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+                    <!-- Marca de Agua -->
+                    <div class="mb-3">
+                        <label for="watermark" class="form-label">Watermark (PNG):</label>
+                        <input class="form-control" type="file" name="watermark" id="watermark" accept="image/png" required>
+                    </div>
+
+                    <!-- Ficheros (imágenes o vídeos) -->
+                    <div class="mb-3">
+                        <label for="images" class="form-label">Files (images/videos):</label>
+                        <input class="form-control" type="file" name="images" id="images" accept="image/png, image/jpeg, video/mp4, video/webm, video/quicktime" multiple required>
+                    </div>
+
+                    <!-- Tamaño de la marca de agua -->
+                    <div class="mb-3">
+                        <label for="size_percentage" class="form-label">Watermark size (% width):</label>
+                        <input class="form-range" type="range" name="size_percentage" id="size_percentage" min="10" max="100" value="50">
+                        <span id="size-value">50%</span>
+                    </div>
+
+                    <!-- Opción para conservar el audio de los vídeos -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" value="1" id="keep-audio" name="keep_audio">
+                        <label class="form-check-label" for="keep-audio">
+                            Keep audio on videos
+                        </label>
+                    </div>
+
+                    <!-- Inputs ocultos para la posición, tipo de medio y conservación de audio -->
+                    <input type="hidden" name="pos_x" id="pos_x" value="0">
+                    <input type="hidden" name="pos_y" id="pos_y" value="0">
+                    <input type="hidden" name="media_type" id="media_type" value="image">
+                    <input type="hidden" name="keep_audio_hidden" id="keep_audio_hidden" value="0">
+
+                    <!-- Botón de Procesar -->
+                    <button type="submit" class="btn btn-primary w-100">
+                        <span class="material-icons align-middle">cloud_upload</span> Run
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Referencias a elementos del formulario y la vista previa
+        const watermarkInput  = document.getElementById('watermark');
+        const imagesInput     = document.getElementById('images');
+        const sizeInput       = document.getElementById('size_percentage');
+        const sizeValue       = document.getElementById('size-value');
+        const imagePreview    = document.getElementById('image-preview');
+        const videoPreview    = document.getElementById('video-preview');
+        const watermarkPreview= document.getElementById('watermark-preview');
+        const previewWrapper  = document.getElementById('preview-wrapper');
+        const posXInput       = document.getElementById('pos_x');
+        const posYInput       = document.getElementById('pos_y');
+        const mediaTypeInput  = document.getElementById('media_type');
+        const guidelines      = document.getElementById('guidelines');
+        const vCenter         = document.getElementById('v-center');
+        const hCenter         = document.getElementById('h-center');
+        const vMarginLeft     = document.getElementById('v-margin-left');
+        const vMarginRight    = document.getElementById('v-margin-right');
+        const hMarginTop      = document.getElementById('h-margin-top');
+        const hMarginBottom   = document.getElementById('h-margin-bottom');
+        const keepAudioCheckbox = document.getElementById('keep-audio');
+        const keepAudioHidden   = document.getElementById('keep_audio_hidden');
+
+        // Variables de control de arrastre
+        let dragging = false;
+        let offsetX  = 0;
+        let offsetY  = 0;
+        let relX     = 0; // posición relativa x (0-1)
+        let relY     = 0; // posición relativa y (0-1)
+
+        // Actualizar valor de porcentaje de tamaño
+        sizeInput.addEventListener('input', () => {
+            sizeValue.textContent = `${sizeInput.value}%`;
+            updatePreview();
+        });
+
+        // Sincronizar el estado del checkbox de audio con el campo oculto
+        keepAudioCheckbox.addEventListener('change', () => {
+            keepAudioHidden.value = keepAudioCheckbox.checked ? '1' : '0';
+        });
+
+        // Gestionar selección de imágenes o vídeos
+        imagesInput.addEventListener('change', () => {
+            if (!imagesInput.files || imagesInput.files.length === 0) return;
+            const file = imagesInput.files[0];
+            // Reset previews
+            imagePreview.classList.add('d-none');
+            videoPreview.classList.add('d-none');
+            if (file.type.startsWith('video/')) {
+                mediaTypeInput.value = 'video';
+                const url = URL.createObjectURL(file);
+                videoPreview.src = url;
+                videoPreview.classList.remove('d-none');
+                // Esperar a que se carguen los metadatos para obtener dimensiones
+                videoPreview.onloadedmetadata = () => {
+                    updatePreview();
+                };
+            } else if (file.type.startsWith('image/')) {
+                mediaTypeInput.value = 'image';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('d-none');
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Mostrar vista previa de la marca de agua
+        watermarkInput.addEventListener('change', () => {
+            const file = watermarkInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                watermarkPreview.src = e.target.result;
+                watermarkPreview.classList.remove('d-none');
+                updatePreview();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Iniciar arrastre de la marca de agua
+        watermarkPreview.addEventListener('mousedown', (e) => {
+            if (watermarkPreview.classList.contains('d-none')) return;
+            dragging = true;
+            watermarkPreview.style.cursor = 'grabbing';
+            const rect = watermarkPreview.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            showGuidelines();
+        });
+        // Finalizar arrastre
+        document.addEventListener('mouseup', () => {
+            if (dragging) {
+                dragging = false;
+                watermarkPreview.style.cursor = 'grab';
+                hideGuidelines();
+            }
+        });
+        // Mover mientras se arrastra
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            const containerRect = previewWrapper.getBoundingClientRect();
+            const wmWidth = watermarkPreview.offsetWidth;
+            const wmHeight= watermarkPreview.offsetHeight;
+            // Calcular coordenadas relativas al contenedor
+            let left = e.clientX - containerRect.left - offsetX;
+            let top  = e.clientY - containerRect.top  - offsetY;
+            // Limitar dentro del contenedor
+            left = Math.max(0, Math.min(left, containerRect.width  - wmWidth));
+            top  = Math.max(0, Math.min(top,  containerRect.height - wmHeight));
+            // Definir posiciones de guías
+            const margin = 0.05; // 5%
+            const threshold = 10; // px para ajuste
+            const centerX = (containerRect.width - wmWidth) / 2;
+            const centerY = (containerRect.height- wmHeight)/ 2;
+            const marginLeftPos   = margin * containerRect.width;
+            const marginRightPos  = (1 - margin) * containerRect.width - wmWidth;
+            const marginTopPos    = margin * containerRect.height;
+            const marginBottomPos = (1 - margin) * containerRect.height - wmHeight;
+            // Ajustar si está cerca de las guías
+            if (Math.abs(left - centerX) < threshold) left = centerX;
+            if (Math.abs(left - marginLeftPos) < threshold) left = marginLeftPos;
+            if (Math.abs(left - marginRightPos) < threshold) left = marginRightPos;
+            if (Math.abs(top - centerY) < threshold) top = centerY;
+            if (Math.abs(top - marginTopPos) < threshold) top = marginTopPos;
+            if (Math.abs(top - marginBottomPos) < threshold) top = marginBottomPos;
+            // Aplicar posición
+            watermarkPreview.style.left = `${left}px`;
+            watermarkPreview.style.top  = `${top}px`;
+            // Guardar posición relativa
+            relX = left / containerRect.width;
+            relY = top  / containerRect.height;
+            updateHiddenInputs();
+        });
+
+        /**
+         * Actualiza la vista previa cuando cambian tamaño, imágenes o marca de agua.
+         */
+        function updatePreview() {
+            // Asegurarse de que haya previa de imagen/vídeo y marca de agua
+            const hasBg    = (!imagePreview.classList.contains('d-none') || !videoPreview.classList.contains('d-none'));
+            const hasWater = !watermarkPreview.classList.contains('d-none');
+            if (!hasBg || !hasWater) return;
+            // Calcular dimensiones del contenedor
+            const containerRect = previewWrapper.getBoundingClientRect();
+            // Calcular tamaño de la marca de agua (porcentaje del ancho del contenedor)
+            const baseWidth = containerRect.width;
+            const sizePx    = (sizeInput.value / 100) * baseWidth;
+            // Mantener relación de aspecto de la imagen de la marca de agua
+            const naturalW  = watermarkPreview.naturalWidth || 1;
+            const naturalH  = watermarkPreview.naturalHeight || 1;
+            const aspect    = naturalH / naturalW;
+            const heightPx  = sizePx * aspect;
+            watermarkPreview.style.width  = `${sizePx}px`;
+            watermarkPreview.style.height = `${heightPx}px`;
+            // Calcular posición absoluta a partir de las coordenadas relativas almacenadas
+            const left = relX * containerRect.width;
+            const top  = relY * containerRect.height;
+            watermarkPreview.style.left = `${left}px`;
+            watermarkPreview.style.top  = `${top}px`;
+            updateHiddenInputs();
+            // Actualizar la posición de las guías
+            positionGuidelines(containerRect, sizePx, heightPx);
+        }
+
+        /**
+         * Posiciona las guías en función del tamaño del contenedor.
+         */
+        function positionGuidelines(containerRect, wmW, wmH) {
+            const margin = 0.05;
+            // Centro
+            vCenter.style.left = `${containerRect.width / 2}px`;
+            hCenter.style.top  = `${containerRect.height/ 2}px`;
+            // Márgenes
+            vMarginLeft.style.left  = `${margin * containerRect.width}px`;
+            vMarginRight.style.left = `${(1 - margin) * containerRect.width}px`;
+            hMarginTop.style.top    = `${margin * containerRect.height}px`;
+            hMarginBottom.style.top = `${(1 - margin) * containerRect.height}px`;
+        }
+
+        /**
+         * Muestra las líneas de guía.
+         */
+        function showGuidelines() {
+            vCenter.classList.remove('d-none');
+            hCenter.classList.remove('d-none');
+            vMarginLeft.classList.remove('d-none');
+            vMarginRight.classList.remove('d-none');
+            hMarginTop.classList.remove('d-none');
+            hMarginBottom.classList.remove('d-none');
+        }
+        /**
+         * Oculta las líneas de guía.
+         */
+        function hideGuidelines() {
+            vCenter.classList.add('d-none');
+            hCenter.classList.add('d-none');
+            vMarginLeft.classList.add('d-none');
+            vMarginRight.classList.add('d-none');
+            hMarginTop.classList.add('d-none');
+            hMarginBottom.classList.add('d-none');
+        }
+
+        /**
+         * Actualiza los inputs ocultos con la posición relativa actual.
+         */
+        function updateHiddenInputs() {
+            posXInput.value = relX;
+            posYInput.value = relY;
+        }
+
+        // Al enviar el formulario, redirigir al inicio después de procesar
+        document.getElementById('upload-form').addEventListener('submit', (e) => {
+            // Si no hay archivos seleccionados, impedir el envío
+            if (!imagesInput.files || imagesInput.files.length === 0) {
+                e.preventDefault();
+                return;
+            }
+            // Sincronizar posiciones una última vez
+            updateHiddenInputs();
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

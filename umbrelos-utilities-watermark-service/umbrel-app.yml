@@ -1,0 +1,31 @@
+manifestVersion: 1
+id: umbrelos-utilities-watermark-service
+name: Watermark Service
+tagline: Batch service to add custom watermarks on multiple images and videos
+description: >-
+  This Flask-based service allows you to upload images and videos, select a watermark in PNG format
+ , adjust its size and position, and download the processed files with the watermark incorporated. It is
+ ideal for protecting your content directly from your Umbrel without relying on external services.
+category: Utilities
+version: "1.0.0"
+port: 9009
+icon: https://github.com/bold-iodev/umbrelos-utilities/blob/master/appicon.png?raw=true
+# Opcional: define hasta 3‑5 enlaces a imágenes 16:10 (1440x900 px) que se mostrarán en la galería del App Store.
+gallery:
+  - https://via.placeholder.com/1440x900.png?text=Watermark+Service
+  - https://via.placeholder.com/1440x900.png?text=File+Upload
+  - https://via.placeholder.com/1440x900.png?text=Processed+Output
+
+developer: IODev__
+website: 
+submitter: IODev__
+submission: 
+repo: 
+support: 
+releaseNotes: >-
+  Launch version 1.0.0
+dependencies: []
+# path indica el subdirectorio que debe abrirse automáticamente al hacer clic en "Abrir" en Umbrel. Dejar vacío para la raíz.
+path: ""
+defaultUsername: ""
+defaultPassword: ""

@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # This must point to <app-id>_<service-name>_1
+      APP_HOST: custom-watermark-service_server_1
+      APP_PORT: 9009
+
+  server:
+    # Build the image from the included Dockerfile. When the app is installed on
+    # Umbrel, it will build the image automatically on the target architecture (e.g. Raspberry Pi ARM64).
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: custom-watermark-service:latest
+    restart: on-failure
+    stop_grace_period: 1m
+    # Map persistent directories into the container. Umbrel defines $APP_DATA_DIR
+    # to store your app's data. We mount the image uploads and processed outputs
+    # there so they persist across upgrades.
+    volumes:
+      - ${APP_DATA_DIR}/images:/app/images
+      - ${APP_DATA_DIR}/outputs:/app/outputs
+    # Expose port 9009 internally; the app_proxy handles external routing.
+    ports:
+      - "9009:9009"
