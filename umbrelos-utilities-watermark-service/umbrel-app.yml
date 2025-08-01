@@ -9,19 +9,17 @@ description: >-
 category: Utilities
 version: "1.0.0"
 port: 9009
-icon: https://github.com/bold-iodev/umbrelos-utilities/blob/master/appicon.png?raw=true
+icon: https://github.com/bold-iodev/umbrelos-utilities/blob/master/medias/watermark-service/appicon.png?raw=true
 # Opcional: define hasta 3‑5 enlaces a imágenes 16:10 (1440x900 px) que se mostrarán en la galería del App Store.
 gallery:
-  - https://via.placeholder.com/1440x900.png?text=Watermark+Service
-  - https://via.placeholder.com/1440x900.png?text=File+Upload
-  - https://via.placeholder.com/1440x900.png?text=Processed+Output
+  - https://github.com/bold-iodev/umbrelos-utilities/blob/master/medias/watermark-service/screenshot1.png?raw=true
 
 developer: IODev__
 website: 
 submitter: IODev__
-submission: 
-repo: 
-support: 
+submission: https://github.com/bold-iodev/umbrelos-utilities
+repo: https://github.com/bold-iodev/umbrelos-utilities
+support: https://github.com/bold-iodev/umbrelos-utilities
 releaseNotes: >-
   Launch version 1.0.0
 dependencies: []
