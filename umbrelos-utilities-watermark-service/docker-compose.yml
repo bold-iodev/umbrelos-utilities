@@ -7,7 +7,7 @@ services:
       APP_PORT: 9099
 
   server:
-    image: ghcr.io/bold-iodev/umbrelos-utilities-watermark-service:1.0.0
+    image: ghcr.io/bold-iodev/umbrelos-utilities-watermark-service:1.0.1
     restart: on-failure
     stop_grace_period: 1m
     # Map persistent directories into the container. Umbrel defines $APP_DATA_DIR

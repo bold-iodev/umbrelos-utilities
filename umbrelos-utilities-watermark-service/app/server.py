@@ -96,11 +96,7 @@ def upload_files():
     return jsonify({"files": processed_files})
 
 def apply_watermark_to_video(video_path: str, watermark_img: Image.Image, size_percentage: float, pos_x: float, pos_y: float, output_path: str) -> None:
-    """Aplica una marca de agua a cada frame de un vídeo utilizando OpenCV.
-
-    La marca de agua se redimensiona según el porcentaje indicado del ancho del vídeo y se coloca
-    en las coordenadas relativas (pos_x, pos_y). Actualmente, el audio no se conserva.
-    """
+    """Aplica una marca de agua a cada frame de un vídeo utilizando OpenCV."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Unable to open video: {video_path}")
@@ -109,35 +105,37 @@ def apply_watermark_to_video(video_path: str, watermark_img: Image.Image, size_p
     fps    = cap.get(cv2.CAP_PROP_FPS) or 25.0
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    # Convertir la marca de agua a numpy array y RGBA
+
+    # Convertir y redimensionar la marca de agua
     wm_rgba = np.array(watermark_img.convert('RGBA'))
-    # Calcular tamaño de la marca de agua según el ancho del vídeo
     new_w = int((size_percentage / 100.0) * width)
     ratio = watermark_img.height / watermark_img.width
     new_h = int(new_w * ratio)
-    wm_rgba_resized = cv2.resize(wm_rgba, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    wm_resized = cv2.resize(wm_rgba, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
-    # Convertir a BGR y normalizar
-    wm_bgr = cv2.cvtColor(wm_rgba_resized, cv2.COLOR_RGBA2BGR).astype(np.float32)
-    wm_alpha = wm_rgba_resized[:, :, 3].astype(np.float32) / 255.0
+    wm_bgr = wm_resized[:, :, :3]
+    wm_alpha = wm_resized[:, :, 3] / 255.0  # (H, W), float entre 0 y 1
 
-    # Calcular posición absoluta
-    pos_left = int(pos_x * width)
-    pos_top = int(pos_y * height)
-    pos_left = max(0, min(pos_left, width - new_w))
-    pos_top = max(0, min(pos_top, height - new_h))
+    # Aseguramos shape para broadcasting
+    wm_alpha = wm_alpha[:, :, np.newaxis]  # → (H, W, 1)
+
+    # Posición de la marca
+    pos_left = max(0, min(int(pos_x * width), width - new_w))
+    pos_top  = max(0, min(int(pos_y * height), height - new_h))
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        base = frame.astype(np.float32)
-        roi = base[pos_top:pos_top + new_h, pos_left:pos_left + new_w]
-        for c in range(3):
-            roi[:, :, c] = (1.0 - wm_alpha) * roi[:, :, c] + wm_alpha * wm_bgr[:, :, c]
-        base[pos_top:pos_top + new_h, pos_left:pos_left + new_w] = roi
-        out_frame = np.clip(base, 0, 255).astype('uint8')
-        out.write(out_frame)
+
+        roi = frame[pos_top:pos_top + new_h, pos_left:pos_left + new_w].astype(np.uint8)
+
+        # Mezcla con alpha
+        blended = (1.0 - wm_alpha) * roi + wm_alpha * wm_bgr
+        frame[pos_top:pos_top + new_h, pos_left:pos_left + new_w] = blended.astype(np.uint8)
+
+        out.write(frame)
+
     cap.release()
     out.release()
 

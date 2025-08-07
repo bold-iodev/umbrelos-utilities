@@ -7,7 +7,7 @@ description: >-
   size and position, and download the processed files with the watermark incorporated. It is ideal for protecting
   your content directly from your Umbrel without relying on external services.
 category: Utilities
-version: "1.0.0"
+version: "1.0.1"
 port: 9009
 icon: https://github.com/bold-iodev/umbrelos-utilities/blob/master/umbrelos-utilities-watermark-service/medias/watermark-service/appicon.png?raw=true
 # Opcional: define hasta 3-5 enlaces a imágenes 16:10 (1440x900 px) que se mostrarán en la galería del App Store.
@@ -20,7 +20,7 @@ submission: https://github.com/bold-iodev/umbrelos-utilities
 repo: https://github.com/bold-iodev/umbrelos-utilities
 support: https://github.com/bold-iodev/umbrelos-utilities
 releaseNotes: >-
-  Launch version 1.0.0
+  Fix video watermark 1.0.1
 dependencies: []
 path: ""
 defaultUsername: ""
