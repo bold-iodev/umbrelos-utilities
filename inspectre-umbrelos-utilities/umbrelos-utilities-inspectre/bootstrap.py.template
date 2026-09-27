@@ -1,0 +1,13 @@
+"""Seed quiet defaults once; preserve all subsequent UI choices."""
+from database import SessionLocal, Setting, _migrate, _seed_settings
+with SessionLocal() as db:
+    _migrate(db)
+    fresh = db.query(Setting).count() == 0
+    _seed_settings(db)
+    if fresh:
+        for key in ("enable_port_scanning", "enable_service_fingerprinting",
+                    "enable_nightly_scan", "enable_unscanned_retry"):
+            setting = db.get(Setting, key)
+            if setting is not None:
+                setting.value = "false"
+        db.commit()
