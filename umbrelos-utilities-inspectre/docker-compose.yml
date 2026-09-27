@@ -1,0 +1,86 @@
+services:
+  app_proxy:
+    environment:
+      APP_HOST: umbrelos-utilities-inspectre_frontend_1
+      APP_PORT: 80
+  db:
+    image: postgres:15.19-alpine3.24@sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81
+    restart: on-failure
+    environment:
+      POSTGRES_USER: inspectre
+      POSTGRES_DB: inspectre
+      POSTGRES_PASSWORD: ${APP_UMBRELOS_UTILITIES_INSPECTRE_DB_PASSWORD}
+    # The host-network detector needs DB access. Never publish it on the LAN.
+    ports:
+      - "127.0.0.1:15439:5432"
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inspectre -d inspectre"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  web:
+    image: thefunkygibbon/inspectre-web:raspi@sha256:33fe27b9e42493e573b4e42bc5b4da7d79ae588e9be869dd36ff5a9f751ef2fb
+    platform: linux/arm64
+    restart: on-failure
+    init: true
+    environment:
+      DATABASE_URL: postgresql://inspectre:${APP_UMBRELOS_UTILITIES_INSPECTRE_DB_PASSWORD}@umbrelos-utilities-inspectre_db_1:5432/inspectre
+      SECRET_KEY: ${APP_UMBRELOS_UTILITIES_INSPECTRE_JWT_SECRET}
+      PROBE_API_SECRET: ${APP_UMBRELOS_UTILITIES_INSPECTRE_PROBE_SECRET}
+      PROBE_API_URL: http://host.docker.internal:18666
+      CORS_ORIGINS: http://${DEVICE_DOMAIN_NAME}:8799
+      PYTHONPATH: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["sh", "-c", "python /opt/umbrel-bootstrap.py && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
+    volumes:
+      - ${APP_DATA_DIR}/bootstrap.py:/opt/umbrel-bootstrap.py:ro
+      - ${APP_DATA_DIR}/data/trivy:/root/.cache/trivy
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+  probe:
+    image: thefunkygibbon/inspectre-probe:raspi@sha256:eda2b084a325bb6d270f8cdb82aab90c8db8df8fdb0f87010ae7e0ea4a47b028
+    platform: linux/arm64
+    restart: on-failure
+    init: true
+    # LAN ARP/mDNS discovery requires host networking and raw sockets.
+    # No privileged mode, NET_ADMIN, Docker socket or host filesystem mounts.
+    network_mode: host
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DATABASE_URL: postgresql://inspectre:${APP_UMBRELOS_UTILITIES_INSPECTRE_DB_PASSWORD}@127.0.0.1:15439/inspectre
+      PROBE_API_PORT: "18666"
+      PROBE_API_SECRET: ${APP_UMBRELOS_UTILITIES_INSPECTRE_PROBE_SECRET}
+      PROBE_ALLOWED_ORIGINS: http://${DEVICE_DOMAIN_NAME}:8799
+      SCAN_INTERVAL: "60"
+      ENABLE_PORT_SCANNING: "false"
+      ENABLE_SERVICE_FINGERPRINTING: "false"
+      ENABLE_NIGHTLY_SCAN: "false"
+      ENABLE_UNSCANNED_RETRY: "false"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ${APP_DATA_DIR}/data/nuclei:/root/nuclei-templates
+    depends_on:
+      web:
+        condition: service_healthy
+  frontend:
+    image: thefunkygibbon/inspectre-frontend:raspi@sha256:7a491bdfe28fdbaac4d8ecb432400c2da1840957717eed83d4412ad1e606ee9c
+    platform: linux/arm64
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
