@@ -1,0 +1,34 @@
+manifestVersion: 1.4
+id: umbrelos-utilities-inspectre
+category: networking
+name: InSpectre
+version: "2026.09.27-1"
+tagline: Conoce los dispositivos de tu red y recibe avisos
+description: >-
+  Panel de dispositivos, nombres personalizados, historial de presencia y alertas.
+  Crea tu cuenta en el primer inicio y completa el asistente.
+
+
+  Este paquete comunitario comienza con detección y resolución de nombres.
+  Los escaneos automáticos de puertos y vulnerabilidades están desactivados inicialmente.
+  Las notificaciones móviles requieren configurar un canal desde la aplicación.
+
+
+  El detector usa la red del host y CAP_NET_RAW para descubrir dispositivos.
+  No se da acceso al Docker de Umbrel. La gestión de contenedores y el bloqueo
+  de dispositivos no están soportados por este paquete. Paquete experimental:
+  pendiente de prueba completa de instalación y reinicio en Umbrel.
+releaseNotes: ""
+developer: thefunkygibbon
+website: https://www.inspectre.cc
+dependencies: []
+repo: https://github.com/thefunkygibbon/InSpectre
+support: https://github.com/bold-iodev/umbrelos-utilities/issues
+port: 8799
+gallery: []
+path: ""
+icon: https://raw.githubusercontent.com/bold-iodev/umbrelos-utilities/master/umbrelos-utilities-inspectre/icon.png
+defaultUsername: ""
+defaultPassword: ""
+submitter: IODev__
+submission: https://github.com/bold-iodev/umbrelos-utilities
